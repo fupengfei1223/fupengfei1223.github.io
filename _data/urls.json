@@ -1,29 +1,29 @@
 [
   {
-    "text": "Home",
+    "text": "博客",
     "url": "/",
     "icon": "fa-home",
     "layout": "post"
   },
   {
-    "text": "About",
-    "url": "/about/",
-    "icon": "fa-comments"
+    "text": "归档",
+    "url": "/Mind/",
+    "icon": "fa-commenting"
   },
   {
-    "text": "Projects",
-    "url": "/projects",
-    "icon": "fa-desktop"
-  },
-  {
-    "text": "Resume",
-    "url": "/#",
-    "icon": "fa-graduation-cap",
+    "text": "朋友",
+    "url": "/friends/",
+    "icon": "fa-group"
   },
   {
     "text": "Github",
     "url": "/#",
     "icon": "fa-github"
+  },
+  {
+    "text": "关于",
+    "url": "/about/",
+    "icon": "fa-info"
   },
   {
     "text": "XML Feed",
