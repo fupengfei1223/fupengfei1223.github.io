@@ -5,7 +5,7 @@ logo: /static/img/avatar.png
 github: https://fupengfei1223.github.io/
 about: 疑难杂症博物馆，.net老司机
 
-baseurl: "https://fupengfei1223.github.io/"
+baseurl: "https://fupengfei1223.github.io"
 url: "https://fupengfei1223.github.io/"
 
 allowsearch: true
