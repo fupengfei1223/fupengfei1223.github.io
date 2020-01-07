@@ -14,7 +14,7 @@ categories:
 ## 改造
 原先的Tcp客户端结构如下(部分)：
 
-``` C#
+``` csharp
     public class TcpStocketClient
     {
     	///<summary>
@@ -79,7 +79,7 @@ categories:
     }
 ```
 上面代码主要使用了Tcpsocket.BeginConnect() 和Tcpsocket.Receive(); 经过一番调研 发现微软提供了using System.Net.WebSockets.ClientWebSocket类，下面进行是最小变动改造:
-```C#
+```csharp
 public class TcpWebSocketClient
     {
     	 ///<summary>
@@ -166,7 +166,7 @@ websocket连接地址的格式为 "ws:+url"
 
 ## Https
 随着甲方需求的深入，服务器要求采用https协议 与之相应的websocket也需要调整：
-```C#
+```csharp
  string url = string.Format("ws://{0}:{1}/cdmsA/webSocket?sn={2}", IP, Port,SN);
                 if (ConfigurationManager.AppSettings["IsHttps"] == "1")
                 {
@@ -188,7 +188,7 @@ websocket连接地址的格式为 "ws:+url"
 ## Win7下的问题
 由于开发部门都是win10的系统，测试以上代码都是没有问题的，某天客户问道win7系统是不是连不上服务器，当时也没多想，毕竟使用的都是微软框架下的东西。后来找到win7机器测试了下果然爆出异常，查了相关资料发现微软官方文档明确说明了websocket不支持win7.....  后背一阵发凉。最后通过如下方法解决:
 引用：System.Net.WebSockets.Client.Managed   websocket对象采用该库对象
-```C#
+```csharp
 ///<summary>
 /// 客户端socket对象
 /// </summary>

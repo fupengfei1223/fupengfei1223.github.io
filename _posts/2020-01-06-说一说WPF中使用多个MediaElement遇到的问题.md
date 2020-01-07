@@ -16,7 +16,7 @@ categories:
 声明多个MediaElement每个初始化时设置source，当播放摸个视频时，显示对应的MediaElement并调用play()，否则隐藏并pause();
 结果：程序打开时开的要命，内存飙升。多个视频同时缓冲 崩溃。。。。
 方案优化：
-```C#
+```csharp
 /// <summary>
     /// MainWindow3.xaml 的交互逻辑
     /// </summary>
