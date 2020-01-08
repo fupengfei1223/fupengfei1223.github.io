@@ -8,7 +8,7 @@ permalink: /friends/
 
 
  - [lindexi](https://blog.lindexi.com/)
-
+ 
    微软最具价值专家，微软MVP，不翻车的老司机，夜空中最亮的星。
 
  - [walterlv https://walterlv.com](https://walterlv.com ) 
