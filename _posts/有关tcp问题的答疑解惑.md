@@ -1,0 +1,117 @@
+---
+title: "有关tcp通讯问题的答疑解惑"
+author: tom
+date: 2020-01-13 20:56:38 +0800
+CreateTime: 2020-01-07 20:44:18 +0800
+categories: 
+---
+这篇文章是分享了我多年来从学习和使用tcp的过程中，遇到的问题，以及处理方式。
+
+首先很多刚接触TCP的新手会习惯性的进入一个思维惯性:发送一个数值接收一个返回值；比如我们调用webservice、调用webapi；在tcp通讯过程中，虽然可以是请求+应答的，但这是一个无需且无状态的过程。什么意思呢，我给大家举个例子：
+现在有两个人分别为A、B，A为客户端，B为服务端。A喊出：请回答；B应答:我在。理想情况下：
+A:请回答
+B:我在
+A:请回答
+B:我在
+A:请回答
+B:我在
+.....一直循环下去。
+但是B应答给A时，出现了网络波动，就会出现
+A:请回答
+A:请回答
+B：我在
+B：我在
+A:请回答
+B：我在
+.....
+次序错乱了。A不能准确的收到B的应答。
+在tcp的传输过程中是以字节流发送和接收，那么每次收到的字节流可能不是完整的，有可能是部分的或者是上次对方应答的字节流+本次应答的部分字节流（其实就是粘包）。这种情况下，我们无法从字节流还原到想要的信息。为什么tcp会这样呢，因为tcp是传输层协议，只保证传输数据送达并且保证流次序，并不处理具体的传输字节表达的内容；而我们使用的http协议是应用层的协议属于上层协议。
+针对tcp这种特性，我们需要封装tcp的应用层协议，一般来说一个包通常为：包头+包内容+包尾。
+包头：一定是固定的字节数，包含包内容的长度信息。
+包体：业务数据，
+包尾：通常是效验码
+如下图样列所示
+![图片1](/asset/TIM图片20200113165025.png)
+
+图中包头包含五个字节，启动第1和第2个字节为固定的0xAA、0x55 ;第三个字节表示一个指令码，一般是通讯双方协定；第四和第五个字节表示包体的字节流长度。包尾是一个字节的CRC8效验。
+
+那么上面是一个常用的tcp包格式。相对的我们可以按照这种格式去接收数据做分包处理。
+首先我们看下tcp常用的发送数据函数：
+```csharp
+//bytearr 数据类型为  byte[]
+Tcpsocket.Send(bytearr);
+```
+C#中 tcpsocket使用send将字节流塞入通道；
+与发送对应的 tcpsocket的接收函数如下：
+```csharp
+//bytearr 数据类型为  byte[]
+Tcpsocket.Receive(buffertemp);
+
+```
+
+Receive()方法是一个阻塞函数，当scoket通道建立后，如果没有数据在接收缓冲区，那么这个方法会一直阻塞在这边，下面我们会利用这个方法的特性，来打造tcp的接收并做好分包处理：
+```csharp
+//第一段
+ //1.包头接收处理
+int allheadleftlengh = 5;
+int receivedlengh = 0;
+byte[] bufferhead = new byte[5];//定义5位是只接收包头
+while (allheadleftlengh - receivedlengh > 0)
+{
+    byte[] buffertemp;
+    if (allheadleftlengh - receivedlengh > 2 * 1024)
+    {
+        buffertemp = new byte[2 * 1024];
+    }
+    else
+    {
+        buffertemp = new byte[allheadleftlengh - receivedlengh];
+    }
+    int lengh = this.Tcpsocket.Receive(buffertemp);
+    if (lengh <= 0)
+    {
+        if (offlinecount == 3)
+        {
+            throw new Exception("Socket  错误！");
+        }
+        offlinecount += 1;
+        Thread.Sleep(1000 * 2);
+    }
+    Buffer.BlockCopy(buffertemp, 0, bufferhead, receivedlengh, lengh);
+    receivedlengh += lengh;
+}
+  //到此 包头接收完整   接下来的代码开始解析包体
+
+//第二段
+offlinecount = 0;
+int allcontentlengh = (bufferhead[3]<<8)+(bufferhead[4]) + 1;//获得内容长度+校验位长度1
+receivedlengh = 0;//已接收到的长度
+byte[] buffercontent = new byte[allcontentlengh];
+while (allcontentlengh - receivedlengh > 0)
+{
+    byte[] buffertemp;
+    if (allcontentlengh - receivedlengh > 10)
+    {
+        buffertemp = new byte[10];
+    }
+    else
+    {
+        buffertemp = new byte[allcontentlengh - receivedlengh];
+    }
+    int lengh = this.Tcpsocket.Receive(buffertemp);
+    if (lengh <= 0)
+    {
+        if (offlinecount == 3)
+        {
+            throw new Exception("Socket  错误！");
+        }
+        offlinecount += 1;
+        Thread.Sleep(1000 * 2);
+
+    }
+    Buffer.BlockCopy(buffertemp, 0, buffercontent, receivedlengh, lengh);
+    receivedlengh += lengh;
+}
+```
+我们先看上面代码的第一段，先定义一个与协议包头一直大小的byte[]数组bufferhead用于存放包头信息。通过while循环接收数据；那么为什么需要while循环去接收数据呢，因为Receive()方法每次不可能接收到完整的包头包，所以我们需要通过计算每次收到的字节长度计算是否已经将包头接收完整。直到包头接收完整再开始接收包体内容。很多初学者搜索tcp样例代码时，网上很多代码都是一端发送 另一端一个简单的receive()，在局域网内，字节流数据少的情况下没有问题，等到生产环境时全是异常，就是因为没有做应用协议，就更没有做tcp报文的分包处理。
+
