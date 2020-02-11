@@ -1,5 +1,5 @@
 ---
-title: "一场http与tcp的交互"
+title: "记录wpf中canvas保存为图片的过程"
 author: tom
 date: 2020-02-11 20:56:38 +0800
 CreateTime: 2020-02-11 20:44:18 +0800
